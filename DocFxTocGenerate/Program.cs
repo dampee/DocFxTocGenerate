@@ -73,12 +73,13 @@ namespace DocFxTocGenerate
                 if (subFiles.Any() == false) { continue; }
 
                 var newTocItem = new TocItem();
-                newTocItem.name = UppercaseFirst(subFiles[0].Name.Replace("-", " ")).Replace(".md", "");
+                newTocItem.name = UppercaseFirst( dirInfo.Name.Replace("-", " "));
                 if (subFiles.Length == 1 && dirInfo.GetDirectories().Length == 0)
                 {
                     newTocItem.href = GetRelativePath(subFiles[0].FullName, rootFolder);
                 }
                 else
+
                 {
                     newTocItem.href = GetRelativePath(subFiles[0].FullName, rootFolder);
 
