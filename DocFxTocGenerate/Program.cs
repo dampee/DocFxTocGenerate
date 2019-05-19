@@ -69,16 +69,19 @@ namespace DocFxTocGenerate
             {
                 if (dirInfo.Name.StartsWith(".")) { continue; }
 
-                // Resursive call for each subdirectory.
-                var newTocItem = new TocItem();
                 var subFiles = dirInfo.GetFiles();
+                if (subFiles.Any() == false) { continue; }
+
+                var newTocItem = new TocItem();
+                newTocItem.name = UppercaseFirst(subFiles[0].Name.Replace("-", " ")).Replace(".md", "");
                 if (subFiles.Length == 1 && dirInfo.GetDirectories().Length == 0)
                 {
-                    newTocItem.name = UppercaseFirst(subFiles[0].Name).Replace(".md", "");
                     newTocItem.href = GetRelativePath(subFiles[0].FullName, rootFolder);
                 }
                 else
                 {
+                    newTocItem.href = GetRelativePath(subFiles[0].FullName, rootFolder);
+
                     WalkDirectoryTree(dirInfo, newTocItem);
                     yamlNodes.AddItem(newTocItem);
                 }
@@ -88,7 +91,9 @@ namespace DocFxTocGenerate
 
         private static List<FileInfo> GetFiles(DirectoryInfo folder, TocItem yamlNodes)
         {
-            var files = folder.GetFiles("*.*").OrderBy(f => f.Name).ToList();
+            var files = folder.GetFiles("*.md").OrderBy(f => f.Name)
+                .Where(f => f.Name.ToLower() != "index.md")
+                .ToList();
             if (files == null)
             {
                 return null;
@@ -100,13 +105,25 @@ namespace DocFxTocGenerate
                 // TODO cleanup directory name
                 yamlNodes.AddItem(new TocItem
                 {
-                    name = UppercaseFirst(fi.Name.Replace("-", " ")).Replace(".md", ""),
+                    name = GetCleanedFileName(fi),
                     href = GetRelativePath(fi.FullName, rootFolder)
                 });
             }
 
 
             return files;
+        }
+
+        private static string GetCleanedFileName(FileInfo fi)
+        {
+            var cleanedName = fi.Name;
+
+            if (fi.Name.ToLower() == "index.md")
+            {
+                cleanedName = fi.DirectoryName
+                    .Substring(fi.DirectoryName.LastIndexOf("\\") + 1);
+            }
+            return UppercaseFirst(cleanedName.Replace("-", " ").Replace(".md", ""));
         }
 
         static string GetRelativePath(string filePath, string sourcePath = null)
@@ -126,7 +143,7 @@ namespace DocFxTocGenerate
             if (fullFile == fullDirectory) { return "/"; }
 
             // The +1 is to avoid the directory separator
-            return fullFile.Substring(fullDirectory.Length + 1);
+            return fullFile.Substring(fullDirectory.Length + 1).Replace("\\", "/");
         }
 
         static string UppercaseFirst(string s)
